@@ -1,0 +1,13 @@
+# Node modules from all subprojects
+**/node_modules/
+
+# Build output from all subprojects
+**/dist/
+**/build/
+
+# MongoDB data directory (specific to your case)
+**/mongo_data/
+
+inventory-service/dist
+inventory-service/mongo_data
+inventory-service/node_modules

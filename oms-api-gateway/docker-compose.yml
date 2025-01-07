@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+  oms-api-gateway:
+    build: .
+    ports:
+      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      
