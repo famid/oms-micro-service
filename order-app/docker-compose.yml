@@ -38,9 +38,9 @@ services:
     container_name: order-app
     command: sh -c "npm run start:dev"
     ports:
-      - "${ORDER_APP_PORT}:3002"  # Map port 3002 on the host to port 3002 in the container
+      - "${APP_PORT}:3002"  # Map port 3002 on the host to port 3002 in the container
     environment:
-      POSTGRES_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/
+      POSTGRES_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/
     volumes:
       - .:/usr/src/app
     restart: unless-stopped

@@ -36,7 +36,7 @@ async function bootstrap() {
       },
     }),
   );
-  console.log('PORTTT: ', appConfig.port);
-  await app.listen(appConfig.port, '0.0.0.0');
+  console.log("PORT: ", process.env.PORT);
+  await app.listen(process.env.PORT ?? 3002);
 }
 bootstrap();
