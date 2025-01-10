@@ -4,12 +4,14 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { MongoDatabaseProviderModule } from './provider/database/mongo/provider.module';
 import { AppConfigModule } from './config/app/config.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(), // Load environment variables
     MongoDatabaseProviderModule,
     AppConfigModule,
+    InventoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
