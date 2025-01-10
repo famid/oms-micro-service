@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { AppConfigModule } from './config/app/config.module';
+import { OrdersModule } from './modules/orders/orders.module';
 import { PostgresDatabaseProviderModule } from './provider/database/postgres/provider.module';
 
 @Module({
@@ -11,6 +12,7 @@ import { PostgresDatabaseProviderModule } from './provider/database/postgres/pro
     AppConfigModule,
     // Database connection
     PostgresDatabaseProviderModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
