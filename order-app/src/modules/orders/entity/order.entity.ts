@@ -33,5 +33,5 @@ export class Order {
   updated_at: Date;
 
   @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at: Date; // Used for soft delete
+  deleted_at: Date;
 }

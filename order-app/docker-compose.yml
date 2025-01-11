@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # PostgreSQL service
-  postgres:
+  order-postgres:
     image: postgres:latest
     container_name: order-postgres-db
     restart: always
@@ -11,16 +11,16 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - ${POSTGRES_PORT}:5432  # Load PostgreSQL port from .env
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}  # Load PostgreSQL port from .env
     volumes:
       - postgres-data:/var/lib/postgresql/data  # Persistent volume for PostgreSQL data
     networks:
       - order-network  # Connect to the custom network
 
   # pgAdmin service
-  pgadmin:
+  order-pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: pgadmin
+    container_name: order-pgadmin
     restart: always
     ports:
       - ${PGADMIN_PORT}:80  # Load pgAdmin port from .env

@@ -2,8 +2,8 @@ import { Injectable, HttpStatus, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner } from 'typeorm';
 import { PlaceOrderDto } from '../dto/place-order.dto';
-import { OrderItem } from '../schemas/order-item.entity';
-import { Order } from '../schemas/order.entity';
+import { OrderItem } from '../entity/order-item.entity';
+import { Order } from '../entity/order.entity';
 
 @Injectable()
 export class OrderService {
@@ -128,21 +128,51 @@ export class OrderService {
     }
   }
 
-  /**
-   * Retrieve all orders, including their order items.
-   */
-  async getAllOrders() {
+  async getAllOrders(
+    currentPage: number = 1,
+    perPage: number = 10,
+    status?: string,
+  ) {
     try {
-      // Fetch all orders, including related order items
-      const orders = await this.orderRepository.find({
-        relations: ['order_items'], // Include related order items
-      });
+      // Ensure that currentPage and perPage are numbers
+      currentPage = Number(currentPage);
+      perPage = Number(perPage);
+
+      if (isNaN(currentPage) || isNaN(perPage)) {
+        throw new Error('Invalid pagination values');
+      }
+      // Calculate pagination offsets
+      const skip = (currentPage - 1) * perPage;
+      const take = perPage;
+
+      // Build the query with optional filters
+      const queryBuilder = this.orderRepository
+        .createQueryBuilder('order')
+        .leftJoinAndSelect('order.order_items', 'order_items')
+        .orderBy('order.created_at', 'DESC') // Corrected field name
+        .skip(skip)
+        .take(take);
+
+      if (status) {
+        queryBuilder.where('LOWER(order.status) = LOWER(:status)', { status });
+      }
+
+      // Fetch the orders
+      const [orders, total] = await queryBuilder.getManyAndCount();
 
       return {
         success: true,
         statusCode: HttpStatus.OK,
         message: 'Orders retrieved successfully.',
-        data: orders,
+        data: {
+          orders,
+          pagination: {
+            current_page: currentPage,
+            per_page: perPage,
+            total,
+            total_pages: Math.ceil(total / perPage),
+          },
+        },
       };
     } catch (error) {
       throw new HttpException(

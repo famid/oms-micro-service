@@ -12,8 +12,12 @@ import { PostgresConfigService } from '../../../config/database/postgres/config.
         console.log('Postgres URI:', postgresConfigService.uri); // Logs the connection URI
         return {
           type: 'postgres',
-          url: postgresConfigService.uri,
-          synchronize: true, // Set to false in production
+          host: postgresConfigService.host,
+          port: postgresConfigService.port,
+          username: postgresConfigService.username,
+          password: postgresConfigService.password,
+          database: postgresConfigService.database,
+          synchronize: false, // Set to false in production
           logging: true,
           autoLoadEntities: true,
         };

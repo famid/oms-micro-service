@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { OrderService } from '../services/order.service';
 import { PlaceOrderDto } from '../dto/place-order.dto';
 
@@ -18,9 +18,15 @@ export class OrderController {
     return await this.orderService.getOrderById(id);
   }
 
-  // Retrieve all orders
+  /**
+   * Retrieve all orders, including their order items.
+   */
   @Get()
-  async getAllOrders() {
-    return await this.orderService.getAllOrders();
+  async getAllOrders(
+    @Query('current_page') currentPage: number = 1,
+    @Query('per_page') perPage: number = 10,
+    @Query('status') status?: string,
+  ) {
+    return await this.orderService.getAllOrders(currentPage, perPage, status);
   }
 }
