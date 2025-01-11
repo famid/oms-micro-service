@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # PostgreSQL service
-  postgres:
+  payment-postgres:
     image: postgres:latest
     container_name: payment-postgres-db
     restart: always
@@ -11,14 +11,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "${POSTGRES_PORT}:5432"  # Load PostgreSQL port from .env
+      - "7432:${POSTGRES_PORT}"  # Load PostgreSQL port from .env
     volumes:
       - postgres-data:/var/lib/postgresql/data  # Persistent volume for PostgreSQL data
     networks:
       - payment-network  # Connect to the custom network
 
   # pgAdmin service
-  pgadmin:
+  payment-pgadmin:
     image: dpage/pgadmin4:latest
     container_name: payment-pgadmin
     restart: always
@@ -27,6 +27,8 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    depends_on:
+      - payment-postgres  # Ensure PostgreSQL starts first
     networks:
       - payment-network  # Connect to the custom network
 
@@ -40,10 +42,12 @@ services:
     ports:
       - "${APP_PORT}:3003"  # Map port 3002 on the host to port 3002 in the container
     environment:
-      POSTGRES_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/
+      POSTGRES_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@payment-postgres:${POSTGRES_PORT}/${POSTGRES_DB}
     volumes:
       - .:/usr/src/app
     restart: unless-stopped
+    depends_on:
+      - payment-postgres  # Ensure PostgreSQL starts first
     networks:
       - payment-network  # Connect to the custom network
 

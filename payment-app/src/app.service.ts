@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  getHello(): string {
-    return 'Hello World payment-postgres!';
+  getHealth(): string {
+    return 'Payment Server Health is ok!!';
   }
 }
