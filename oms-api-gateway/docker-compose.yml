@@ -1,13 +1,29 @@
-version: '3.9'
-
 services:
-  oms-api-gateway:
-    build: .
+  api-gateway:
+    build:
+      context: .  # Since Dockerfile and docker-compose.yml are in the same directory
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    command: sh -c "npm run start:dev"  # Adjust this if needed
     ports:
-      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+      - "${API_GATEWAY_PORT:-3000}:${API_GATEWAY_PORT:-3000}"
+    env_file:
+      - ./.env
     volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      
+      - .:/usr/src/app  # Mount your code to container for live reloads
+    restart: unless-stopped
+    networks:
+      - shared-network  # Connect to the shared network for communication with other services
+
+    # Adding a simple health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${API_GATEWAY_PORT:-3000}/health"]  # Adjust endpoint as necessary
+      interval: 30s  # Check every 30 seconds
+      retries: 3  # Retry 3 times before considering the service unhealthy
+      start_period: 10s  # Wait 10 seconds before starting the health check
+      timeout: 10s  # Timeout after 10 seconds
+
+networks:
+  shared-network:
+    driver: bridge
+
