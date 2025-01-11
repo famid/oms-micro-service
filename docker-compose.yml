@@ -1,0 +1,194 @@
+services:
+  # ====================== RabbitMQ ======================
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - "${RABBITMQ_HOST_PORT}:${RABBITMQ_PORT}"
+      - "${RABBITMQ_MANAGEMENT_HOST_PORT}:${RABBITMQ_MANAGEMENT_PORT}"
+    networks:
+      - shared-network
+
+  # ====================== Auth ======================
+  auth-postgres:
+    image: postgres:latest
+    container_name: auth-postgres-db
+    restart: always
+    env_file:
+      - ./auth-app/.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-default_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-default_password}
+      POSTGRES_DB: ${POSTGRES_DB:-default_auth_db}
+    ports:
+      - "${POSTGRES_HOST_PORT:-7533}:${POSTGRES_PORT:-5432}"
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+    networks:
+      - auth-network
+
+  auth-app:
+    build:
+      context: ./auth-app
+      dockerfile: Dockerfile
+    container_name: auth-app
+    command: sh -c "npm run start:dev"
+    ports:
+      - "${APP_PORT:-3004}:${APP_PORT:-3004}"
+    env_file:
+      - ./auth-app/.env
+      - ./.env
+    volumes:
+      - ./auth-app:/usr/src/app
+    restart: unless-stopped
+    networks:
+      - auth-network
+      - shared-network
+
+  # ====================== Order ======================
+  order-postgres:
+    image: postgres:latest
+    container_name: order-postgres-db
+    restart: always
+    env_file:
+      - ./order-app/.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-default_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-default_password}
+      POSTGRES_DB: ${POSTGRES_DB:-default_order_db}
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:${POSTGRES_PORT:-5432}"
+    volumes:
+      - order-postgres-data:/var/lib/postgresql/data
+    networks:
+      - order-network
+
+  order-app:
+    build:
+      context: ./order-app
+      dockerfile: Dockerfile
+    container_name: order-app
+    command: sh -c "npm run start:dev"
+    ports:
+      - "${APP_PORT:-3002}:${APP_PORT:-3002}"
+    env_file:
+      - ./order-app/.env
+      - ./.env
+    volumes:
+      - ./order-app:/usr/src/app
+    restart: unless-stopped
+    networks:
+      - order-network
+      - shared-network
+
+  # ====================== Inventory ======================
+  inventory-mongo:
+    image: mongo:latest
+    container_name: inventory-mongo
+    restart: always
+    env_file:
+      - ./inventory-app/.env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-example}
+    ports:
+      - "${MONGODB_HOST_PORT:-27017}:${MONGODB_PORT:-27017}"
+    volumes:
+      - inventory-mongo-data:/data/db
+    networks:
+      - inventory-network
+
+  inventory-app:
+    build:
+      context: ./inventory-app
+      dockerfile: Dockerfile
+    container_name: inventory-app
+    command: sh -c "npm run start:dev"
+    ports:
+      - "${APP_PORT:-3001}:${APP_PORT:-3001}"
+    env_file:
+      - ./inventory-app/.env
+      - ./.env
+    volumes:
+      - ./inventory-app:/usr/src/app
+    restart: unless-stopped
+    networks:
+      - inventory-network
+      - shared-network
+
+  # ====================== Payment ======================
+  payment-postgres:
+    image: postgres:latest
+    container_name: payment-postgres-db
+    restart: always
+    env_file:
+      - ./payment-app/.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-default_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-default_password}
+      POSTGRES_DB: ${POSTGRES_DB:-default_payment_db}
+    ports:
+      - "${POSTGRES_HOST_PORT:-7532}:${POSTGRES_PORT:-5432}"
+    volumes:
+      - payment-postgres-data:/var/lib/postgresql/data
+    networks:
+      - payment-network
+
+  payment-app:
+    build:
+      context: ./payment-app
+      dockerfile: Dockerfile
+    container_name: payment-app
+    command: sh -c "npm run start:dev"
+    ports:
+      - "${APP_PORT:-3003}:${APP_PORT:-3003}"
+    env_file:
+      - ./payment-app/.env
+      - ./.env
+    volumes:
+      - ./payment-app:/usr/src/app
+    restart: unless-stopped
+    networks:
+      - payment-network
+      - shared-network
+
+  # ====================== API Gateway ======================
+  api-gateway:
+    build:
+      context: ./oms-api-gateway  # Point to the directory containing Dockerfile
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    command: sh -c "npm run start:dev"
+    ports:
+      - "${API_GATEWAY_PORT:-3000}:${API_GATEWAY_PORT:-3000}"
+    env_file:
+      - ./oms-api-gateway/.env  # Load environment variables from the .env in oms-api-gateway
+      - ./.env  # Load the global environment variables as well
+    volumes:
+      - ./oms-api-gateway:/usr/src/app  # Mount the code directory for live reload
+    restart: unless-stopped
+    networks:
+      - shared-network  # Connect to shared-network for communication with other services
+
+# ====================== Volumes ======================
+volumes:
+  auth-postgres-data:
+  order-postgres-data:
+  inventory-mongo-data:
+  payment-postgres-data:
+
+# ====================== Networks ======================
+networks:
+  shared-network:
+    driver: bridge
+  auth-network:
+    driver: bridge
+  order-network:
+    driver: bridge
+  inventory-network:
+    driver: bridge
+  payment-network:
+    driver: bridge
