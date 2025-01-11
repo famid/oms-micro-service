@@ -2,10 +2,6 @@ import { registerAs } from '@nestjs/config';
 
 /**
  * Registering app related environment variable as configuration
- *
- *
- * @author Mehedi Hassan Durjoi <https://github.com/durjoi>
- * @date 2022-10-21 15:56:18
  */
 export default registerAs('app', () => ({
   env: process.env.APP_ENV,

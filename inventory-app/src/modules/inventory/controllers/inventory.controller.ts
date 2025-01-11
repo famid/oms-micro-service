@@ -7,12 +7,13 @@ import { UpdateProductStockDto } from '../dto/update-product-stock.dto';
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
-  // Get product stock (GET /inventory/{product_id})
+  // Get product stock
   @Get(':product_id')
   async getProductStock(@Param('product_id') productId: string) {
     return await this.inventoryService.getProductStock(productId);
   }
 
+  // update product by id
   @Put(':product_id')
   async updateProductStock(
     @Param('product_id') productId: string,

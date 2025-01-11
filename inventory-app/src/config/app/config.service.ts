@@ -9,9 +9,6 @@ import { ConfigService } from '@nestjs/config';
  * @method url()
  * @method port()
  * @method version()
- *
- * @author Mehedi Hassan Durjoi <https://github.com/durjoi>
- * @date 2022-10-21 15:54:28
  */
 @Injectable()
 export class AppConfigService {

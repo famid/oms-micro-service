@@ -5,9 +5,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 /**
  *  Mongodb Connection Provider Module
- *
- * @author Mehedi Hassan Durjoi <https://github.com/durjoi>
- * @date 2022-10-23 00:00:36
  */
 @Module({
   imports: [

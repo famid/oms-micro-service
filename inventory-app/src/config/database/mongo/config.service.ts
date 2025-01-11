@@ -11,7 +11,6 @@ import { ConfigService } from '@nestjs/config';
  * @method password()
  *
  * @author Ahsanul Hoque Famid <https://github.com/famid>
- * @date 2022-10-22 01:49:27
  */
 @Injectable()
 export class MongoConfigService {
