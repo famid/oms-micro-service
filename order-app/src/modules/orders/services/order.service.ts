@@ -1,9 +1,10 @@
-import { Injectable, HttpStatus, HttpException } from '@nestjs/common';
+import { Injectable, HttpStatus, HttpException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner } from 'typeorm';
 import { PlaceOrderDto } from '../dto/place-order.dto';
 import { OrderItem } from '../entity/order-item.entity';
 import { Order } from '../entity/order.entity';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class OrderService {
@@ -13,6 +14,7 @@ export class OrderService {
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,
     private readonly dataSource: DataSource,
+    @Inject('DUMMY_QUEUE_SERVICE') private readonly rabbitMQClient: ClientProxy,
   ) {}
 
   async placeOrder(placeOrderDto: PlaceOrderDto) {
@@ -185,5 +187,15 @@ export class OrderService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  /**
+   * Send a dummy message to RabbitMQ
+   */
+  async sendDummyMessage(message: string) {
+    const payload = { message, timestamp: new Date().toISOString() };
+    this.rabbitMQClient.emit('dummy_event', payload); // Emit message to RabbitMQ
+    console.log('Message sent:', payload);
+    return { success: true, payload };
   }
 }
