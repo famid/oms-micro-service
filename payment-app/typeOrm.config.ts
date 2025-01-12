@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
+import {PaymentTransaction} from "./src/modules/payment/entity/payment-transaction.entity";
 config();
 
 export default new DataSource({
@@ -9,7 +10,7 @@ export default new DataSource({
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
-  entities: [],
+  entities: [PaymentTransaction],
 
   migrationsTableName: 'typeorm_migrations',
   migrations: ['src/database/migrations/*{.ts,.js}'],

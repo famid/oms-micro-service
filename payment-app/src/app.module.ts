@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { AppConfigModule } from './config/app/config.module';
 import { PostgresDatabaseProviderModule } from './provider/database/postgres/provider.module';
+import {PaymentModule} from "./modules/payment/payment.module";
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { PostgresDatabaseProviderModule } from './provider/database/postgres/pro
     AppConfigModule,
     // Database connection
     PostgresDatabaseProviderModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
