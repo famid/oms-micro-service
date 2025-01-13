@@ -17,21 +17,6 @@ services:
     networks:
       - payment-network  # Connect to the custom network
 
-  # pgAdmin service
-  payment-pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: payment-pgadmin
-    restart: always
-    ports:
-      - ${PGADMIN_PORT}:80  # Load pgAdmin port from .env
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-    depends_on:
-      - payment-postgres  # Ensure PostgreSQL starts first
-    networks:
-      - payment-network  # Connect to the custom network
-
   # payment App (NestJS) service
   payment-app:
     build:
