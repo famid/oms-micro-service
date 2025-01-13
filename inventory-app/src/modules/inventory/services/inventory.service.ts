@@ -1,14 +1,16 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Product } from '../schemas/product.schema';
 import { CreateProductDto } from '../dto/create-product.dto';
+import { RabbitMQProviderModule } from '../../../provider/rabbitmq/provider.modules';
 
 @Injectable()
 export class InventoryService {
   constructor(
     @InjectModel('PRODUCTS')
     private productModel: Model<Product>,
+    private readonly rabbitmqService: RabbitMQProviderModule,
   ) {}
 
   async createProduct(createProductDto: CreateProductDto) {
@@ -105,9 +107,19 @@ export class InventoryService {
 
   async getProductStock(productId: string) {
     try {
+      // Validate and convert productId to ObjectId
+      if (!Types.ObjectId.isValid(productId)) {
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Invalid product ID format.',
+          error: {},
+        };
+      }
+
       const product = await this.productModel.findOne({
-        _id: productId,
-        isDeleted: false, // Ensure the product is not deleted
+        _id: new Types.ObjectId(productId), // Convert to ObjectId
+        isDeleted: false,
       });
 
       if (!product) {
@@ -138,6 +150,60 @@ export class InventoryService {
           error: {},
         },
         error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async handleStockUpdate(message: any) {
+    try {
+      // Validate the message structure
+      if (!Array.isArray(message) || message.length === 0) {
+        console.error('Invalid message format:', message);
+        return;
+      }
+
+      // Process each item in the message
+      for (const item of message) {
+        const { product_id, quantity } = item;
+
+        if (!product_id || typeof quantity !== 'number') {
+          console.error('Invalid item format:', item);
+          continue;
+        }
+
+        // Fetch the product by ID
+        const product = await this.productModel.findOne({
+          _id: product_id,
+          isDeleted: false,
+        });
+
+        if (!product) {
+          console.error(`Product with ID ${product_id} not found.`);
+          continue;
+        }
+
+        // Update the stock
+        product.stock -= quantity;
+
+        // Ensure stock does not go below zero
+        if (product.stock < 0) {
+          product.stock = 0; // Set stock to zero if it goes negative
+          console.warn(
+            `Product stock for ID ${product_id} is below zero. Setting stock to zero.`,
+          );
+        }
+
+        // Save the updated product
+        await product.save();
+        console.log(
+          `Updated stock for product ID ${product_id}. Remaining stock: ${product.stock}`,
+        );
+      }
+    } catch (error) {
+      console.error('Error handling stock update:', error.message);
+      throw new HttpException(
+        'Failed to process stock update.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
