@@ -18,7 +18,7 @@ export class OrderItem {
   @Column({ type: 'uuid' })
   order_id: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'varchar' })
   product_id: string;
 
   @Column({ type: 'integer' })

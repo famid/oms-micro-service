@@ -1,29 +1,33 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateOrderAndOrderItemInitial1736625336442
+export class UpdateOrderAndOrderItemSchema1234567890123
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create 'orders' table
+    // Drop the existing tables
+    await queryRunner.query(`DROP TABLE IF EXISTS "order_items"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "orders"`);
+
+    // Recreate the 'orders' table with the updated schema
     await queryRunner.query(`
       CREATE TABLE "orders" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-        "customer_id" uuid NOT NULL,
-        "total_amount" decimal(10, 2) NOT NULL,
-        "status" character varying(50) NOT NULL,
-        "created_at" TIMESTAMP NOT NULL DEFAULT now(),
-        "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
-        "deleted_at" TIMESTAMP,
-        CONSTRAINT "PK_orders_id" PRIMARY KEY ("id")
+                              "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+                              "customer_id" varchar(255) NOT NULL, -- Changed to string
+                              "total_amount" decimal(10, 2) NOT NULL,
+                              "status" character varying(50) NOT NULL,
+                              "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+                              "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
+                              "deleted_at" TIMESTAMP,
+                              CONSTRAINT "PK_orders_id" PRIMARY KEY ("id")
       )
     `);
 
-    // Create 'order_items' table
+    // Recreate the 'order_items' table with the updated schema
     await queryRunner.query(`
       CREATE TABLE "order_items" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-        "order_id" uuid NOT NULL,
-        "product_id" uuid NOT NULL,
+        "order_id" uuid NOT NULL, -- Set as uuid
+        "product_id" varchar(255) NOT NULL, -- Changed to string
         "quantity" integer NOT NULL,
         "price" decimal(10, 2) NOT NULL,
         "created_at" TIMESTAMP NOT NULL DEFAULT now(),
@@ -36,10 +40,8 @@ export class CreateOrderAndOrderItemInitial1736625336442
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Drop 'order_items' table
-    await queryRunner.query(`DROP TABLE "order_items"`);
-
-    // Drop 'orders' table
-    await queryRunner.query(`DROP TABLE "orders"`);
+    // Drop the new tables
+    await queryRunner.query(`DROP TABLE IF EXISTS "order_items"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "orders"`);
   }
 }

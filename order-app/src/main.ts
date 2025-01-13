@@ -3,6 +3,9 @@ import { AppModule } from './app.module';
 import { AppConfigService } from './config/app/config.service';
 import { RequestMethod, ValidationPipe, VersioningType } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
+import * as basicAuth from 'express-basic-auth';
+import { setupSwagger } from './config/swagger/swagger.config';
+
 import {
   ValidationException,
   ValidationFilter,
@@ -36,7 +39,18 @@ async function bootstrap() {
       },
     }),
   );
-  console.log("PORT: ", process.env.PORT);
+
+  app.use(
+    '/api-docs',
+    basicAuth({
+      challenge: true,
+      users: { ['admin']: 'password' },
+    }),
+  );
+
+  // Call the setupSwagger function after other configurations
+  setupSwagger(app);
+
   await app.listen(process.env.PORT ?? 3002);
 }
 bootstrap();

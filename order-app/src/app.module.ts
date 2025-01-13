@@ -5,7 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppConfigModule } from './config/app/config.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PostgresDatabaseProviderModule } from './provider/database/postgres/provider.module';
-import { RabbitMQModule } from './provider/database/rabbitmq/rabbitmq.module';
+import { RabbitMQProviderModule } from './provider/database/rabbitmq/provider.modules';
 
 @Module({
   imports: [
@@ -13,7 +13,7 @@ import { RabbitMQModule } from './provider/database/rabbitmq/rabbitmq.module';
     AppConfigModule,
     // Database connection
     PostgresDatabaseProviderModule,
-    RabbitMQModule.registerDynamicQueues(), // Register dynamic queues
+    RabbitMQProviderModule,
     OrdersModule,
   ],
   controllers: [AppController],

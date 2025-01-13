@@ -14,13 +14,13 @@ export class Order {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'varchar' })
   customer_id: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   total_amount: number;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ type: 'varchar' })
   status: string;
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.order, { cascade: true })

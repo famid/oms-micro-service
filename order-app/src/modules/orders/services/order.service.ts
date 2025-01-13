@@ -1,10 +1,11 @@
-import { Injectable, HttpStatus, HttpException, Inject } from '@nestjs/common';
+import { Injectable, HttpStatus, HttpException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner } from 'typeorm';
 import { PlaceOrderDto } from '../dto/place-order.dto';
 import { OrderItem } from '../entity/order-item.entity';
 import { Order } from '../entity/order.entity';
-import { ClientProxy } from '@nestjs/microservices';
+import { InventoryClientService } from './inventory-client.service';
+import { RabbitMQProviderModule } from '../../../provider/database/rabbitmq/provider.modules';
 
 @Injectable()
 export class OrderService {
@@ -14,9 +15,11 @@ export class OrderService {
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,
     private readonly dataSource: DataSource,
-    @Inject('DUMMY_QUEUE_SERVICE') private readonly rabbitMQClient: ClientProxy,
+    private readonly inventoryClientService: InventoryClientService,
+    private readonly rabbitmqService: RabbitMQProviderModule,
   ) {}
 
+  // Handle place order
   async placeOrder(placeOrderDto: PlaceOrderDto) {
     const queryRunner: QueryRunner = this.dataSource.createQueryRunner();
 
@@ -25,6 +28,24 @@ export class OrderService {
 
     try {
       const { customer_id, order_items } = placeOrderDto;
+
+      // Step 1: Validate stock availability for each item
+      for (const item of order_items) {
+        const availableStock =
+          await this.inventoryClientService.checkProductStock(item.product_id);
+
+        if (availableStock < item.quantity) {
+          throw new HttpException(
+            {
+              success: false,
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: `Insufficient stock for product ID ${item.product_id}. Available stock: ${availableStock}.`,
+              error: {},
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
 
       // Calculate the total amount from the order items
       const totalAmount = order_items.reduce(
@@ -76,11 +97,11 @@ export class OrderService {
       throw new HttpException(
         {
           success: false,
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          statusCode: error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
           message: 'Failed to place the order. Please try again later.',
           error: error.message || {},
         },
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     } finally {
       // Release query runner
@@ -121,15 +142,16 @@ export class OrderService {
       throw new HttpException(
         {
           success: false,
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Failed to retrieve the order.',
+          statusCode: error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Failed to place the order. Please try again later.',
           error: error.message || {},
         },
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
+  // Fetch all orders
   async getAllOrders(
     currentPage: number = 1,
     perPage: number = 10,
@@ -180,22 +202,97 @@ export class OrderService {
       throw new HttpException(
         {
           success: false,
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Failed to retrieve orders.',
+          statusCode: error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Failed to place the order. Please try again later.',
           error: error.message || {},
         },
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  /**
-   * Send a dummy message to RabbitMQ
-   */
-  async sendDummyMessage(message: string) {
-    const payload = { message, timestamp: new Date().toISOString() };
-    this.rabbitMQClient.emit('dummy_event', payload); // Emit message to RabbitMQ
-    console.log('Message sent:', payload);
-    return { success: true, payload };
+  // Handle payment success
+  async handlePaymentSuccess(orderId: string) {
+    const queryRunner: QueryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Fetch the order
+      const order = await this.orderRepository.findOne({
+        where: { id: orderId },
+      });
+      if (!order) {
+        throw new HttpException(
+          `Order with ID ${orderId} not found.`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      // Update order status to be completed
+      order.status = 'completed';
+      await queryRunner.manager.save(order);
+
+      // Fetch order items for inventory update
+      const orderItems = await this.orderItemRepository.find({
+        where: { order_id: orderId },
+      });
+
+      // Prepare inventory update message
+      const inventoryUpdateMessage = orderItems.map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+      }));
+
+      // Publish message to update inventory
+      await this.rabbitmqService.publish(
+        'inventory_exchange',
+        'inventory.update_stock',
+        inventoryUpdateMessage,
+      );
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+      console.log(
+        `Order ${orderId} updated to COMPLETED and inventory updated.`,
+      );
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error('Error handling payment success:', error.message);
+      throw new HttpException(
+        'Failed to handle payment success.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  // Handle payment failure
+  async handlePaymentFailure(orderId: string) {
+    try {
+      // Fetch the order
+      const order = await this.orderRepository.findOne({
+        where: { id: orderId },
+      });
+      if (!order) {
+        throw new HttpException(
+          `Order with ID ${orderId} not found.`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      // Update order status to cancelled
+      order.status = 'cancelled';
+      await this.orderRepository.save(order);
+
+      console.log(`Order ${orderId} updated to FAILED.`);
+    } catch (error) {
+      console.error('Error handling payment failure:', error.message);
+      throw new HttpException(
+        'Failed to handle payment failure.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

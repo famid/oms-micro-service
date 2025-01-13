@@ -4,15 +4,16 @@ import { Order } from './entity/order.entity';
 import { OrderItem } from './entity/order-item.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderController } from './controllers/order.controller';
-import { RabbitMQModule } from '../../provider/database/rabbitmq/rabbitmq.module';
+import { RabbitMQProviderModule } from '../../provider/database/rabbitmq/provider.modules';
+import { InventoryClientService } from './services/inventory-client.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem]),
-    RabbitMQModule.registerDynamicQueues(),
+    RabbitMQProviderModule,
     // Import the dynamic RabbitMQ module
   ],
   controllers: [OrderController],
-  providers: [OrderService],
+  providers: [OrderService, InventoryClientService],
 })
 export class OrdersModule {}
