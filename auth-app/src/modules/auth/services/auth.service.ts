@@ -12,8 +12,15 @@ export class AuthService {
   async validateUser(username: string, password: string): Promise<any> {
     try {
       const user = await this.userService.validateUser(username, password);
+      if (!user) {
+        throw {
+          success: false,
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Invalid username or password.',
+          error: {},
+        };
+      }
       if (user) {
-        // Destructure the user and exclude password
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password: _, ...result } = user; // Avoid unused variable warning
         return {
@@ -23,30 +30,28 @@ export class AuthService {
           data: result,
         };
       }
-
-      throw new HttpException(
-        {
-          success: false,
-          statusCode: HttpStatus.UNAUTHORIZED,
-          message: 'Invalid username or password.',
-        },
-        HttpStatus.UNAUTHORIZED,
-      );
     } catch (error) {
-      throw new HttpException(
-        {
-          success: false,
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Failed to validate the user.',
-          error: error.message || {},
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw {
+        success: false,
+        statusCode: error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to validate the user.',
+        error: error.message || {},
+      };
     }
   }
 
-  async login(user: any) {
+  async login(username: string, password: string) {
     try {
+      const userResponse = await this.validateUser(username, password);
+      if (!userResponse.success) {
+        throw {
+          success: userResponse.success,
+          statusCode: userResponse.statusCode,
+          message: userResponse.error,
+          error: userResponse.error,
+        };
+      }
+      const user = userResponse.data;
       const payload = {
         username: user.username,
         sub: user.id,
@@ -64,11 +69,11 @@ export class AuthService {
       throw new HttpException(
         {
           success: false,
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          statusCode: error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
           message: 'Failed to login.',
           error: error.message || {},
         },
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        error.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
