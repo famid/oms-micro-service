@@ -25,7 +25,7 @@ app.use(tracing);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/orders', jwtValidation, orderRoutes);
 app.use('/api/v1/inventory', jwtValidation, inventoryRoutes);
-app.use('/api/v1/payment', jwtValidation, paymentRoutes);
+app.use('/api/v1/payments', jwtValidation, paymentRoutes);
 
 // Global error handling middleware
 app.use(errorHandler);

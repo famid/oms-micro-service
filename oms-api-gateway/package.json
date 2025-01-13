@@ -20,6 +20,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
+    "http-proxy-middleware": "^3.0.3",
     "jaeger-client": "^3.19.0",
     "jsonwebtoken": "^9.0.2",
     "winston": "^3.17.0"

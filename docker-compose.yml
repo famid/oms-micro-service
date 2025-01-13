@@ -20,13 +20,13 @@ services:
     env_file:
       - ./auth-app/.env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-default_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-default_password}
-      POSTGRES_DB: ${POSTGRES_DB:-default_auth_db}
+      POSTGRES_USER: ${POSTGRES_USER:-oms_auth}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-example}
+      POSTGRES_DB: ${POSTGRES_DB:-auth_db}
     ports:
       - "${POSTGRES_HOST_PORT:-7533}:${POSTGRES_PORT:-5432}"
     volumes:
-      - auth-postgres-data:/var/lib/postgresql/data
+      - ./auth-app/auth-postgres-data:/var/lib/postgresql/data
     networks:
       - auth-network
 
@@ -56,9 +56,9 @@ services:
     env_file:
       - ./order-app/.env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-default_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-default_password}
-      POSTGRES_DB: ${POSTGRES_DB:-default_order_db}
+      POSTGRES_USER: ${POSTGRES_USER:-oms_order}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-example}
+      POSTGRES_DB: ${POSTGRES_DB:-order_db}
     ports:
       - "${POSTGRES_HOST_PORT:-5432}:${POSTGRES_PORT:-5432}"
     volumes:
@@ -127,9 +127,9 @@ services:
     env_file:
       - ./payment-app/.env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-default_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-default_password}
-      POSTGRES_DB: ${POSTGRES_DB:-default_payment_db}
+      POSTGRES_USER: ${POSTGRES_USER:-oms_payment}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-example}
+      POSTGRES_DB: ${POSTGRES_DB:-payment_db}
     ports:
       - "${POSTGRES_HOST_PORT:-7532}:${POSTGRES_PORT:-5432}"
     volumes:

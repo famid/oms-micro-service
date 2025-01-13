@@ -30,18 +30,20 @@ function createServiceRouter(baseUrl) {
                     break;
                 case 'PUT':
                     response = await axios.put(targetUrl, req.body, {
-                        headers: req.headers,
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${req.headers.authorization}`,
                     });
                     break;
                 case 'PATCH':
                     response = await axios.patch(targetUrl, req.body, {
-                        headers: req.headers,
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${req.headers.authorization}`,
                     });
                     break;
                 case 'DELETE':
                     response = await axios.delete(targetUrl, {
-                        headers: req.headers,
-                        data: req.body, // Pass body for DELETE if needed
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${req.headers.authorization}`,
                     });
                     break;
                 default:
